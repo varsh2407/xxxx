@@ -1,0 +1,52 @@
+from typing import Any, Dict, Optional
+from agents.base_agent import BaseAgent
+from architecture import AgentRole, ApplicationSpec
+
+
+class DatabaseDesignerGeneric(BaseAgent):
+    """Generic Database Designer that adapts based on DB type and scale."""
+
+    def __init__(self, db_type: Optional[str] = None, scale: str = "medium"):
+        super().__init__(AgentRole.DATABASE_DESIGNER)
+        self.db_type = db_type or "PostgreSQL"
+        self.scale = scale
+
+    def get_system_prompt(self) -> str:
+        return f"""
+You are a Principal Database Architect specializing in {self.db_type}.
+
+Application Context:
+- Database Type: {self.db_type}
+- Scale: {self.scale}
+
+Design a production-ready database schema.
+
+Your output must be JSON with:
+- schema_sql
+- migration_sql
+- seed_sql
+- tables
+- relationships
+- indexes
+- enum_types
+
+GUIDELINES:
+- Use best practices for {self.db_type}
+- Design for {self.scale} scale applications
+- Include proper constraints and relationships
+- Optimize for performance and scalability
+- Avoid hardcoding values
+- Include indexing strategy
+"""
+
+    def design(self, spec: ApplicationSpec, architecture: Dict[str, Any]) -> Dict[str, Any]:
+        result = self.think(
+            "Design a scalable database schema for this application.",
+            context={
+                "spec": spec.__dict__,
+                "architecture": architecture,
+                "db_type": self.db_type,
+                "scale": self.scale
+            }
+        )
+        return result
