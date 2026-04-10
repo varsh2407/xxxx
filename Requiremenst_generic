@@ -1,0 +1,52 @@
+from typing import Any, Dict, Optional
+from agents.base_agent import BaseAgent
+from architecture import AgentRole, ApplicationSpec
+
+
+class RequirementsAnalystGeneric(BaseAgent):
+    """Generic Requirements Analyst that adapts based on domain and app type."""
+
+    def __init__(self, domain: Optional[str] = None, app_type: Optional[str] = None):
+        super().__init__(AgentRole.REQUIREMENTS_ANALYST)
+        self.domain = domain or "general"
+        self.app_type = app_type or "web application"
+
+    def get_system_prompt(self) -> str:
+        return f"""
+You are a Senior Business Analyst specializing in {self.domain} systems.
+
+Your goal is to convert a user idea into a structured application specification.
+
+Application Context:
+- Domain: {self.domain}
+- Application Type: {self.app_type}
+
+You must produce a JSON specification including:
+- app_name
+- description
+- app_type
+- features
+- tech_stack
+- non_functional_requirements
+- api_endpoints
+- entities
+- external_integrations
+- environment_variables
+
+GUIDELINES:
+- Adapt features based on domain
+- Suggest appropriate tech stack dynamically
+- Include realistic entities and APIs
+- Keep it production-ready but flexible
+"""
+
+    def analyze(self, vibe_prompt: str) -> ApplicationSpec:
+        result = self.think(
+            "Analyze the following application idea and generate a structured specification.",
+            context={
+                "prompt": vibe_prompt,
+                "domain": self.domain,
+                "app_type": self.app_type
+            }
+        )
+        return ApplicationSpec.from_dict(result)
