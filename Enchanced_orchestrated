@@ -201,4 +201,28 @@ Return ONLY JSON:
         return {
             "backend": backend_tests.get("code", ""),
             "frontend": frontend_tests.get("code", "")
+
+
+
+
+
+from architecture import AgentRole
+
+from agents.requirements_analyst_generic import RequirementsAnalystGeneric
+from agents.architect_generic import SystemArchitectGeneric
+from agents.backend_developer_generic import BackendDeveloperGeneric
+from agents.frontend_developer_generic import FrontendDeveloperGeneric
+from agents.database_engineer_generic import DatabaseDesignerGeneric
+from agents.devops_engineer_generic import DevOpsEngineerGeneric
+
+class VibeCodingOrchestrator:
+
+    def __init__(self):
+        self.agents = {
+            AgentRole.REQUIREMENTS_ANALYST: RequirementsAnalystGeneric(),
+            AgentRole.ARCHITECT: SystemArchitectGeneric(),
+            AgentRole.BACKEND_DEVELOPER: BackendDeveloperGeneric(),
+            AgentRole.FRONTEND_DEVELOPER: FrontendDeveloperGeneric(),
+            AgentRole.DATABASE_DESIGNER: DatabaseDesignerGeneric(),
+            AgentRole.DEVOPS_ENGINEER: DevOpsEngineerGeneric(),
         }
