@@ -1,0 +1,204 @@
+from typing import Dict, Any
+from orchestrator import ApplicationOrchestrator
+from architecture import AgentRole
+
+
+class EnhancedOrchestrator(ApplicationOrchestrator):
+    """Enhanced orchestrator with dynamic agent execution"""
+
+    def __init__(self, api_key: str):
+        super().__init__(api_key)
+        self.conversation_history = []
+        self.iterations = []
+
+    # -------------------------------
+    # 🧠 DECISION ENGINE (NEW)
+    # -------------------------------
+    def _decide_pipeline(self, spec) -> Dict[str, Any]:
+        """
+        Decide which agents to run dynamically based on spec
+        """
+
+        decision = self.agents[AgentRole.REQUIREMENTS_ANALYST].think(
+            """
+You are a system orchestrator.
+
+Given an application specification, decide which components are required.
+
+Return ONLY JSON:
+{
+    "run_architecture": true,
+    "run_database": true,
+    "run_backend": true,
+    "run_frontend": true,
+    "run_devops": false,
+    "reason": "Explain briefly"
+}
+""",
+            context={"spec": spec.__dict__}
+        )
+
+        return decision
+
+    # -------------------------------
+    # 🔄 DYNAMIC BUILD FLOW (NEW)
+    # -------------------------------
+    def build_dynamic(self, vibe: str) -> Dict[str, Any]:
+        """
+        Dynamically execute agents instead of fixed pipeline
+        """
+
+        print("\n🔹 Step 1: Requirements Analysis")
+        spec = self.agents[AgentRole.REQUIREMENTS_ANALYST].analyze(vibe)
+
+        print("\n🔹 Step 2: Deciding Execution Flow")
+        decision = self._decide_pipeline(spec)
+        print(f"Decision: {decision}")
+
+        result = {"spec": spec}
+
+        # -------------------------------
+        # CONDITIONAL EXECUTION
+        # -------------------------------
+
+        if decision.get("run_architecture", True):
+            print("\n🏗️ Generating Architecture...")
+            result["architecture"] = self.agents[AgentRole.ARCHITECT].design(spec)
+
+        if decision.get("run_database", True):
+            print("\n🗄️ Designing Database...")
+            result["database"] = self.agents[AgentRole.DATABASE_DESIGNER].design(
+                spec, result.get("architecture", {})
+            )
+
+        if decision.get("run_backend", True):
+            print("\n⚙️ Generating Backend...")
+            result["backend_files"] = self.agents[AgentRole.BACKEND_DEVELOPER].think(
+                "Generate backend code",
+                context=result
+            )
+
+        if decision.get("run_frontend", True):
+            print("\n🎨 Generating Frontend...")
+            result["frontend_files"] = self.agents[AgentRole.FRONTEND_DEVELOPER].think(
+                "Generate frontend code",
+                context=result
+            )
+
+        if decision.get("run_devops", False):
+            print("\n🚀 Generating DevOps...")
+            result["devops"] = self.agents[AgentRole.DEVOPS_ENGINEER].think(
+                "Generate deployment configuration",
+                context=result
+            )
+
+        print("\n✅ Build Completed (Dynamic Flow)")
+        return result
+
+    # -------------------------------
+    # 🧑‍💻 INTERACTIVE MODE (UPDATED)
+    # -------------------------------
+    def interactive_build(self, initial_vibe: str):
+        print("Interactive Build Mode")
+        print("=" * 50)
+
+        # 🔥 USE NEW DYNAMIC BUILD
+        result = self.build_dynamic(initial_vibe)
+        self.iterations.append(result)
+
+        while True:
+            print("\n" + "=" * 50)
+            print("What would you like to do?")
+            print("1. Refine a feature")
+            print("2. Add new functionality")
+            print("3. Change tech stack")
+            print("4. Finalize build")
+            print("5. Start over")
+
+            choice = input("\nChoice (1-5): ").strip()
+
+            if choice == "1":
+                self._refine_feature(result)
+
+            elif choice == "2":
+                self._add_feature(result)
+
+            elif choice == "3":
+                self._change_tech_stack(result)
+
+            elif choice == "4":
+                self._finalize_build(result)
+                break
+
+            elif choice == "5":
+                new_vibe = input("Enter new vibe prompt: ")
+                result = self.build_dynamic(new_vibe)
+                self.iterations.append(result)
+
+            else:
+                print("Invalid choice")
+
+    # -------------------------------
+    # 🔧 EXISTING METHODS (UNCHANGED)
+    # -------------------------------
+
+    def _refine_feature(self, current_result: Dict):
+        print("\nCurrent features:")
+        for i, feature in enumerate(current_result["spec"].features, 1):
+            print(f"{i}. {feature}")
+
+        feature_num = int(input("\nWhich feature to refine? ")) - 1
+        refinement = input("How should it be different? ")
+
+        updated_spec = self.agents[AgentRole.REQUIREMENTS_ANALYST].think(
+            f"Refine feature '{current_result['spec'].features[feature_num]}' based on: {refinement}",
+            context={"spec": current_result["spec"].__dict__}
+        )
+
+        print("\n🔄 Regenerating affected components...")
+        self._regenerate_components(updated_spec)
+
+    def _add_feature(self, current_result: Dict):
+        new_feature = input("\nDescribe the new feature: ")
+
+        analysis = self.agents[AgentRole.ARCHITECT].think(
+            f"Analyze adding this feature: {new_feature}",
+            context=current_result
+        )
+
+        print(f"\nImpact analysis:\n{analysis.get('raw_response', '')}")
+
+        confirm = input("\nProceed? (y/n): ")
+        if confirm.lower() == "y":
+            self._integrate_new_feature(current_result, new_feature)
+
+    def _integrate_new_feature(self, result: Dict, feature: str):
+        backend_changes = self.agents[AgentRole.BACKEND_DEVELOPER].think(
+            f"Generate backend changes for: {feature}",
+            context=result
+        )
+
+        frontend_changes = self.agents[AgentRole.FRONTEND_DEVELOPER].think(
+            f"Generate frontend changes for: {feature}",
+            context=result
+        )
+
+        print("Feature integrated successfully")
+
+    def generate_test_suite(self, result: Dict) -> Dict[str, str]:
+        test_agent = self.agents[AgentRole.QA_ENGINEER]
+
+        backend_tests = test_agent.think(
+            "Generate backend tests",
+            context=result
+        )
+
+        frontend_tests = test_agent.think(
+            "Generate frontend tests",
+            context=result
+        )
+
+        return {
+            "backend": backend_tests.get("code", ""),
+            "frontend": frontend_tests.get("code", "")
+        }
